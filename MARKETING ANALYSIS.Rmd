@@ -1,0 +1,351 @@
+---
+title: '**MARKET ANALYSIS OF SALES**'
+author: '**Benard Kipngeno**'
+date: "`r format(Sys.time(),'%d %B %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    theme: cosmo
+    number_sections: yes
+    colortheme: dolphin
+    toc: yes
+    toc_float:
+      collapse: no
+      smooth_scroll: no
+    toc_depth: 6
+  pdf_document:
+    toc: yes
+    toc_depth: '6'
+subtitle: '**Impact of Advertisement Platforms on Sales**'
+---
+
+
+```{r, echo=FALSE}
+htmltools::img(src = knitr::image_uri("C:/Users/hp/Desktop/New folder/Rbasics/1086px-R_logo.svg.png"), 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;height: 128px')
+
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r,echo= FALSE,include=F}
+library(tidyverse)
+library(funModeling)
+library(plotly)
+library(datasets)
+library(explore)
+library(datarium)
+library(knitr)
+library(stargazer)
+library(rmarkdown)
+library(bookdown)
+library(tinytex)
+library(webshot)
+library(leaps)
+library(car)
+library(caret)
+library(tinytex)
+```
+
+
+```{r,echo= FALSE,include=F}
+data("marketing")
+marketing
+```
+
+# Table of Contents
+
+# **Aim**
+The objective of this study is to investigate the influence of the following advertisement platforms; youtube,facebook and newspaper on the product sales promotion and marketing in the United states.To achieve the aim of the research,marketing data was extracted from datarium R package and saved as Excel CSV format.It is through this study that the marketing performance of each platform will be measured as well as identifying the best marketing platform among the three.The underlying customers patterns in the preference of advertisement platforms will be revealed in this research.This study also aims at improving on the previous research conducted on the factors affecting market of United States products.The following are peer reviewed references;<https://www.sciencedirect.com/science/article/abs/pii/S0747563216300450> ,<https://www.ingentaconnect.com/content/hsp/jdsmm/2016/00000003/00000004/art00009> ,<https://www.wakeenpages.com/blog/the-impact-of-newspaper-advertising/>
+
+#  **Question and problem**
+The main question of this research is how the advertisements channels i.e. youtube,facebook,newspapers affect product sales? What is the magnitude of each platform on the product sales promotion? Does the advertisement platforms explain the variation in the product sales?
+
+# **Scope of the research**
+This study focuses on the impact of the three advertisements channels; youtube,facebook and newspapers on the product sales promotion in United states but the findings may be generalized to other countries.These platforms are also gaining popularity exponentially in the rest of the world and with time the generalizations of this findings may also extend to other parts of the world.
+
+# **Methods**
+The data used in this research was obtained from the *datarium R package*,its called "*marketing*".Exploratory data analysis was done to understand the underlying patterns in the data.Descriptive statistics were generated and Graphs such as histogram and boxplot was drawn to visualize distribution of the variable sales and  check for the outliers in the data.To answer research questions statistical test such as hypothesis testing of correlation and plotting scatter plot were carried out.Multiple linear regression model was used understand the impact of each independent variable on the dependent variable.
+
+# **Results**
+
+## **Exploratory Data Analysis of Marketing Data**
+
+### **Descriptive Statistics**
+
+#### **Examining the number of variables and observation in the data**
+The figure below describe the data visually;
+```{r}
+explore_tbl(marketing)
+```
+
+The data consist of four continuous variables that is youtube,facebook,newspapers and sales and 200 observations which are recorded in thousands of dollars except sales which is recorded in billions of dollars.The recorded observations of the advertisement platforms are the cost incurred in marketing a product through it while sales are the revenue from the sales of the product. 
+
+#### **Checking for missing values and unique values**
+The table below show features of the variables in the data;
+```{r}
+kable(describe(marketing))
+```
+The data had no missing values.
+
+#### **Exploring data by measures of central tendencies **
+The table below shows summary statistics of each variable;
+```{r}
+kable(summary(marketing))
+```
+The revenue accumulated on average is 20.90 billion dollars.The cost incurred in youtube advertisements is almost 5 times the cost incurred in the facebook advertisement and 6 times the cost incurred in newspaper advertisements.
+
+#### **Exploring data to understand distribution of the variables**
+```{r}
+explore_all(marketing)
+```
+
+The above normal distribution curves depicts that the variables are approximately distributed,therefore the assumption of normal distribution is not violated.
+
+
+
+#### **Examining the relationship that exists between dependent variable  and independents variables**
+The graphs below show the relatioship between the target variable and the independent variables.
+```{r}
+marketing %>% 
+  select(youtube,facebook,newspaper,sales) %>% 
+  explore_all(target = sales)
+```
+
+
+
+
+#### **Checking for the sales distribution using histogram**
+The histogram below shows the distribution of sales,it clearly shows that the observation of the sales nearly follows normal distribution.
+```{r}
+hist <- ggplot(data = marketing, aes(x = sales)) + 
+  geom_histogram(bins = 9,fill = "skyblue",color = "white")+
+  labs(title = "Sales Distribution",x = "sales",y = "Frquency")+
+   geom_vline(xintercept = mean(marketing$sales),        # Add line for mean
+             col = "red",
+             lwd = 1) +
+  annotate("text",                        # Add text for mean
+           x = mean(marketing$sales) * 1.7,
+           y = mean(marketing$sales) * 1.7,
+           label = paste("Mean =", mean(marketing$sales)),
+           col = "red",
+           size = 8)+
+  geom_vline(xintercept = median(marketing$sales),      # Add line for median
+             col = "black",
+             lwd = 1) +
+  annotate("text",                        # Add text for median
+           x = median(marketing$sales) * 1.5,
+           y = median(marketing$sales) * 1.5,
+           label = paste("Median =", median(marketing$sales)),
+           col = "black",
+           size = 8)
+ggplotly(hist)
+```
+
+#### **Box plot to check for outliers in the sales**
+The box plot below shows that there are no outliers in the variable sales since  all observations are within the minimum and maximum range of the box plot.
+```{r}
+box <- ggplot(data = marketing,
+       aes(y = sales))+
+  geom_boxplot(fill = "#00a86b")+
+  labs(title = "Box Plot of Sales",
+       y="sales(in 000's)", x = "Sales")
+  
+ggplotly(box)
+```
+
+#### **Checking the Multi-collinearity of independent variables**
+The tables below show the correlation coefficient of the independent variables.According to the results obtained,there is no correlation coefficient between independent variables that exceeds exceeds 0.5,therefore multi-collinearity does not exist.This implies that linear regression assumption is not violated and all three variables can be used in the linear model predicting sales.
+```{r}
+kable(cor(marketing[,1:3]))#correlation of all variables
+```
+
+### **Data Analysis**
+#### **Correlation  of dependent variable against the independent variables**
+Correlation is the most approriate statistical analysis test used to check if there exists linear relationship between dependent variable sales and independent variables youtube,facebook and newspapers and it also applies only to continuous variables.
+
+##### **Correlation between dependent variable against all independent variables**
+##### **Correlation Table**
+```{r}
+kable(correlation_table(marketing,'sales'))#correlation of independent variables against dependent variable
+```
+
+##### **Hypothesis testing of correlations**
+###### **Testing the significance of the relationship between Sales and YouTube**
+To achieve this,null and alternative hypothesis were formulated as follows;
+Null hypothesis : states that there is no linear significant relationship between the sales revenue and the cost incurred  in youtube advertisements.
+
+Alternative hypothesis states there is linear significant relationship between the sales revenue and the cost incurred  in youTube advertisements.
+Below are the scatter plot and the correlation hypothesis testing results;
+
+```{r}
+ #Scatter for sales against Youtube
+scatter <- ggplot(data = marketing,aes(x = youtube,y = sales))+
+  geom_point(color = "red")+
+  labs(title = "Relationship Between Youtube and Sales",x = "Youtube",
+       y = "Sales")
+ggplotly(scatter)
+cor.test(marketing$sales,marketing$youtube)
+```
+According to the results above,at 95% confidence level p-value(2.2e-16) is less than alpha-value(0.05),therefore we reject null hypothesis.This implies that there is linear significant relationship between the sales revenue and the cost incurred  in YouTube advertisements.The correlation coefficient is 0.78,therefore there is a strong positive linear significant relationship between the sales revenue and the cost incurred  in YouTube advertisements.This is also depicted clearly in the scatter plot by an upward increasing pattern.
+
+
+###### **Testing the significance of the relationship between Sales and Facebook**
+To achieve this,null and alternative hypothesis were formulated as follows;
+Null hypothesis : states that there is no linear significant relationship between the sales revenue and the cost incurred  in facebook advertisements.
+
+Alternative hypothesis states there is linear significant relationship between the sales revenue and the cost incurred  in facebook  advertisements.
+Below are the scatter plot and the correlation hypothesis testing results;
+```{r}
+#Scatter for sales against Facebook
+scatter2 <- ggplot(data = marketing,aes(x = facebook,y = sales))+
+  geom_point(color = "blue")+
+  labs(title = "Relationship Between Facebook and Sales",x = "Facebook",
+       y = "Sales")
+ggplotly(scatter2)
+cor.test(marketing$sales,marketing$facebook)
+```
+According to the results above,at 95% confidence level p-value(2.2e-16) is less than alpha-value(0.05),therefore we reject null hypothesis.This implies that there is linear significant relationship between the sales revenue and the cost incurred  in facebook advertisements.The correlation coefficient is 0.58,therefore there is a moderate positive linear significant relationship between the sales revenue and the cost incurred  in facebook advertisements.This is also clearly in the scatter plot as it is an direct relationship.
+
+##### **Testing the significance of the relationship between Sales and Newspaper**
+To achieve this,null and alternative hypothesis were formulated as follows;
+Null hypothesis : states that there is no linear significant relationship between the sales revenue and the cost incurred  in newspaper advertisements.
+
+Alternative hypothesis states there is linear significant relationship between the sales revenue and the cost incurred  in newspaper  advertisements.
+Below are the scatter plot and the correlation hypothesis testing results;
+
+```{r}
+##Scatter for sales against Newspaper
+scatter3 <- ggplot(data = marketing,aes(x = newspaper,y = sales))+
+  geom_point(color = "black")+
+  labs(title = "Relationship Between Newspaper and Sales",x = "Newspaper",
+       y = "Sales")
+ggplotly(scatter3)
+cor.test(marketing$sales,marketing$newspaper)
+
+
+```
+According to the results above,at 95% confidence level p-value(0.001148) is less than alpha-value(0.05),therefore we reject null hypothesis.This implies that there is linear significant relationship between the sales revenue and the cost incurred  in newspaper advertisements.The correlation coefficient is 0.23,therefore there is a weak positive linear significant relationship between the sales revenue and the cost incurred  in newspaper advertisements.This weak relationship is also clearly observed in the scatter plot as there is no clear pattern taken by the relationship.
+
+
+
+#### **Multiple Linear Regression**
+To answer the objective of this study, further investigation were performed that is more certain that the sales revenue is influenced by the medium of the advertisement.Multiple linear regression is the most appropriate to investigate the magnitude of each platform on sales revenue relative to others.The dependent variable is sales revenue predicted by independent variables youtube,facebook,newspapers.This results of the linear regression are shown below.
+
+##### **Regression Analysis**
+```{r}
+sales_model <- lm(sales ~ youtube + facebook + newspaper, data = marketing)
+summary(sales_model)
+```
+###### **Accessing significance of the model**
+The multiple linear regression model is significant and fit for predicting sales revenue since at 95% confidence level,p-value(2.2e-6) is less than alpha-value(0.05).
+
+###### **Interpretation of coefficient of determination(R-squared) **
+89.72% of the variation in the sales revenue is explained by the independent variables youtube, facebook and newspapers while the remaining 11.28% cannot be accounted for by the model.
+
+###### **Accessing the magnitude of each independent variables on the dependent variable**
+The independent variable YouTube and facebook are the only significant independent variables because their p-value is less than the significance level 0.05.Newspaper is insignificant in the model because its p-value is greater that significance level 0.05.This implies that YouTube and facebook are the only variables to be considered when choosing advertisement medium for product sales promotion and marketing.
+Holding all other factors constant,one unit change in the cost incurred in YouTube advertisements results in 0.045765 in the sales revenue.
+Holding all other factors constant,one unit change in the cost incurred in facebook advertisements results in 0.188530 in the sales revenue.
+
+##### **Variable Selection using k-fold Cross-validation Method**
+A more rigorous way of selecting models based on the prediction error computed on a new test data using k-fold cross-validation techniques.
+id: model id,
+object: regsubsets object
+data: data used to fit regsubsets,
+outcome: outcome variable.
+
+
+```{r}
+model <- regsubsets(sales~.,data = marketing,nvmax = 3)
+summary(model)
+```
+
+
+
+
+
+
+```{r}
+get_model_formula <- function(id, object, outcome){
+  # get models data
+  model <- summary(object)$which[id,-1]
+  # Get outcome variable
+  #form <- as.formula(object$call[[2]])
+  #outcome <- all.vars(form)[1]
+  # Get model predictors
+  predictors <- names(which(model == TRUE))
+  predictors <- paste(predictors, collapse = "+")
+  # Build model formula
+  as.formula(paste0(outcome, "~", predictors))
+}
+get_model_formula(1, model, "sales")
+get_model_formula(2, model, "sales")
+get_model_formula(3, model, "sales")
+```
+
+
+```{r}
+get_cv_error <- function(model.formula, data){
+  set.seed(1)
+  train.control <- trainControl(method = "cv", number = 3)
+  cv <- train(model.formula, data = data, method = "lm",
+              trControl = train.control)
+  cv$results$RMSE
+}
+```
+
+###### **CV Errors**
+```{r}
+model.ids <- 1:3
+cv.errors <-  map(model.ids, get_model_formula, model,"sales") %>%
+  map(get_cv_error, data = marketing) %>%
+  unlist()
+cv.errors
+
+```
+
+######  **Select the model that minimize the CV error**
+
+```{r}
+which.min(cv.errors)
+coef(model,2)
+model2 <- lm(sales ~ youtube + facebook,data = marketing)
+summary(model2)
+```
+K-fold cross validation Method affirms that the best explanatory variables of sales are Facebook and YouTube only. YouTube turned out to be the most significant explanatory variable of sales. 
+
+
+
+#  **Main Conclusion**
+The investigation of this study establishes that YouTube and facebook are the advertisement media that should be considered by any company or organization when making decision on which platform to invest in advertising their product in order to promote their sales in the market.This also confirms that company that deals in product sales or any marketing ought to conform to market dynamics since most of the customers spend their time online hence its the strategic place to channel adverts of products.
+
+#  **References**
+<https://search.proquest.com/openview/8e47927e86a14cc15df27ede8444480f/1?pq-origsite=gscholar&cbl=1818401>
+<https://books.google.co.ke/books?hl=en&lr=&id=Us4YE8lJVYMC&oi=fnd&pg=PP2&dq=regression+analysis&ots=WVGobxRjZe&sig=gOPy2Imq82AR1SKB96woOo9VNPM&redir_esc=y#v=onepage&q=regression%20analysis&f=false>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
